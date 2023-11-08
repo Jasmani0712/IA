@@ -1,0 +1,50 @@
+# 4 rnn - sequential sin función
+# Importamos las bibliotecas necesarias
+
+import os  # Importamos una biblioteca llamada "os" que nos permite interactuar con el sistema operativo.
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Configuramos una variable de entorno para controlar mensajes de TensorFlow que no queremos ver.
+
+import tensorflow as tf  # Importamos TensorFlow, que es una biblioteca de aprendizaje automático.
+from tensorflow import keras  # Importamos Keras, una interfaz fácil de usar para construir modelos de aprendizaje automático.
+from tensorflow.keras import layers  # Importamos módulos para construir capas de la red neuronal.
+from tensorflow.keras.datasets import cifar10  # Importamos un conjunto de datos llamado CIFAR-10, que contiene imágenes.
+
+# Verificamos si hay una tarjeta gráfica (GPU) disponible en la computadora.
+physical_devices = tf.config.list_physical_devices("GPU")
+
+# Cargamos los datos de entrenamiento y prueba desde el conjunto de datos CIFAR-10.
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+# Normalizamos los datos, lo que significa que los valores de píxeles se convierten a un rango entre 0 y 1 para facilitar el entrenamiento del modelo.
+x_train = x_train.astype("float32") / 255.0
+x_test = x_test.astype("float32") / 255.0
+
+# Definimos la arquitectura de nuestro modelo de red neuronal.
+model = keras.Sequential([
+    keras.Input(shape=(32, 32, 3)),  # Especificamos que nuestras imágenes son de 32x32 píxeles con 3 canales de color (RGB).
+    layers.Conv2D(32, 3, padding="valid", activation="relu"),  # Capa de convolución con 32 filtros y activación ReLU.
+    layers.MaxPooling2D(),  # Capa de Max Pooling para reducir el tamaño de la imagen.
+    layers.Conv2D(64, 3, activation="relu"),  # Otra capa de convolución con 64 filtros y activación ReLU.
+    layers.MaxPooling2D(),  # Otra capa de Max Pooling.
+    layers.Conv2D(128, 3, activation="relu"),  # Otra capa de convolución con 128 filtros y activación ReLU.
+    layers.Flatten(),  # Aplanamos la salida para prepararla para las capas densas.
+    layers.Dense(64, activation="relu"),  # Capa completamente conectada con 64 neuronas y activación ReLU.
+    layers.Dense(10)  # Capa completamente conectada con 10 neuronas (una para cada clase en CIFAR-10).
+])
+
+# Compilamos el modelo, lo que significa configurar cómo se entrenará. Especificamos la función de pérdida, el optimizador y las métricas que queremos seguir.
+model.compile(
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),  # Utilizamos la función de pérdida adecuada para la clasificación.
+    optimizer=keras.optimizers.Adam(lr=3e-4),  # Elegimos un optimizador eficaz.
+    metrics=["accuracy"]  # Seguimos la métrica de precisión para evaluar el rendimiento del modelo.
+)
+
+# Entrenamos el modelo con los datos de entrenamiento. Le decimos al modelo cómo ajustarse a los datos para que pueda hacer predicciones más precisas.
+model.fit(x_train, y_train, batch_size=64, epochs=10, verbose=2)  # Utilizamos un tamaño de lote eficiente y mostramos información de progreso.
+
+# Evaluamos el modelo en los datos de prueba para ver qué tan bien puede hacer predicciones en datos que no ha visto antes.
+resultados = model.evaluate(x_test, y_test, batch_size=64, verbose=2)  # Mostramos métricas de rendimiento en los datos de prueba.
+
+# Los resultados incluyen la pérdida y la precisión (accuracy) del modelo en los datos de prueba.
+print("Pérdida en los datos de prueba:", resultados[0])
+print("Precisión en los datos de prueba:", resultados[1])
